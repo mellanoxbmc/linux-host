@@ -1,0 +1,61 @@
+comment "Mellanox NPS network processor TCAM module"
+
+config MLXNP_TCAM_I2C
+        tristate "Mellanox Technologies TCAM module I2C support"
+        depends on I2C
+        default m
+        ---help---
+          This driver supports I2C access for Mellanox Technologies TCAM
+          module.
+
+          To compile this driver as a module, choose M here: the
+          module will be called mlxnp_tcam_i2c
+
+config MLXNP_TCAM_LPC
+        tristate "Mellanox Technologies TCAM module LPC support"
+        depends on X86_64
+        default m
+        ---help---
+          This driver supports LPC access for Mellanox Technologies TCAM
+          module.
+
+          To compile this driver as a module, choose M here: the
+          module will be called mlxnp_tcam_lpc
+
+
+comment "Mellanox NPS network processor FPGA module"
+
+config MLXNP_FPGA_I2C
+        tristate "Mellanox Technologies FPGA module I2C support"
+        depends on I2C
+        default m
+        ---help---
+          This driver supports I2C access for Mellanox Technologies FFPGA
+          module.
+
+          To compile this driver as a module, choose M here: the
+          module will be called mlxnp_fpga_i2c
+
+config MLXNP_FPGA_LPC
+        tristate "Mellanox Technologies FPGA module LPC support"
+        depends on X86_64
+        default m
+        ---help---
+          This driver supports LPC access for Mellanox Technologies FPGA
+          module.
+
+          To compile this driver as a module, choose M here: the
+          module will be called mlxnp_fpga_lpc
+
+comment "Mellanox NPS network processor gerabox module"
+
+config MLXNP_GBOX_LPC
+        tristate "Mellanox Technologies gerabox module LPC support"
+        depends on X86_64
+        default m
+        ---help---
+          This driver supports LPC access for Mellanox Technologies gerabox
+          module.
+
+          To compile this driver as a module, choose M here: the
+          module will be called mlxnp_gerabox_lpc
