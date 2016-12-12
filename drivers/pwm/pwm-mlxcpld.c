@@ -158,7 +158,7 @@ static ssize_t pwm_mlxcpld_attr_show(struct device *dev,
 	struct pwm_mlxcpld *pwm_mlxcpld = platform_get_drvdata(pdev);
 	int index = to_sensor_dev_attr_2(attr)->index;
 	int nr = to_sensor_dev_attr_2(attr)->nr;
-	u8 val = 0;
+	u16 val = 0;
 	unsigned long lval;
 
 	switch (nr) {
@@ -213,7 +213,6 @@ static int pwm_mlxcpld_attr_init(struct pwm_mlxcpld *pwm_mlxcpld)
 
 	for (i = 0; i < pwm_mlxcpld->pdata->tacho.count; i++) {
 		for (j = 0; j < PWM_MLXCPLD_TACHO_ATTR_NUM; j++, k++) {
-			//k = i * PWM_MLXCPLD_TACHO_ATTR_NUM + j;
 			PRIV_ATTR(k) = &PRIV_DEV_ATTR(k).dev_attr.attr;
 			PRIV_DEV_ATTR(k).dev_attr.attr.mode = S_IRUGO;
 			PRIV_DEV_ATTR(k).dev_attr.show = pwm_mlxcpld_attr_show;
@@ -222,7 +221,7 @@ static int pwm_mlxcpld_attr_init(struct pwm_mlxcpld *pwm_mlxcpld)
 			case 0:
 				PRIV_DEV_ATTR(k).nr =
 					PWM_MLXCPLD_ATTR_TYPE_TACHO;
-				PRIV_ATTR(i)->name = devm_kasprintf(
+				PRIV_ATTR(k)->name = devm_kasprintf(
 					&pwm_mlxcpld->pdev->dev, GFP_KERNEL,
 					"fan%u_input", i + 1);
 				break;
@@ -258,7 +257,6 @@ static int pwm_mlxcpld_attr_init(struct pwm_mlxcpld *pwm_mlxcpld)
 
 	for (i = 0; i < pwm_mlxcpld->pdata->pwm.count; i++) {
 		for (j = 0; j < PWM_MLXCPLD_PWM_ATTR_NUM; j++, k++) {
-			//k = i * PWM_MLXCPLD_PWM_ATTR_NUM + j;
 			PRIV_ATTR(k) = &PRIV_DEV_ATTR(k).dev_attr.attr;
 			PRIV_DEV_ATTR(k).dev_attr.attr.mode = S_IRUGO;
 			PRIV_DEV_ATTR(k).dev_attr.show = pwm_mlxcpld_attr_show;
@@ -312,41 +310,6 @@ static int pwm_mlxcpld_attr_init(struct pwm_mlxcpld *pwm_mlxcpld)
 			sysfs_attr_init(&PRIV_DEV_ATTR(k).dev_attr.attr);
 		}
 	}
-
-#if 0
-	for (i = 0; i < num_attrs; i++) {
-		PRIV_ATTR(i) = &PRIV_DEV_ATTR(i).dev_attr.attr;
-
-		if (i < pwm_mlxcpld->pdata->tacho.count) {
-			PRIV_ATTR(i)->name = devm_kasprintf(
-				&pwm_mlxcpld->pdev->dev, GFP_KERNEL, "fan%u_input", i
-				+ 1);
-			PRIV_DEV_ATTR(i).nr = PWM_MLXCPLD_ATTR_TYPE_TACHO;
-			PRIV_DEV_ATTR(i).dev_attr.attr.mode = S_IRUGO;
-			PRIV_DEV_ATTR(i).dev_attr.show = pwm_mlxcpld_attr_show;
-		} else  {
-			PRIV_ATTR(i)->name = devm_kasprintf(
-				&pwm_mlxcpld->pdev->dev, GFP_KERNEL, "pwm%u",
-				i % pwm_mlxcpld->pdata->pwm.count + 1);
-			PRIV_DEV_ATTR(i).nr = PWM_MLXCPLD_ATTR_TYPE_PWM;
-			PRIV_DEV_ATTR(i).dev_attr.attr.mode = S_IWUSR |
-							      S_IRUGO;
-			PRIV_DEV_ATTR(i).dev_attr.show = pwm_mlxcpld_attr_show;
-			PRIV_DEV_ATTR(i).dev_attr.store =
-							pwm_mlxcpld_store_pwm;
-		}
-
-		if (!PRIV_ATTR(i)->name) {
-			dev_err(&pwm_mlxcpld->pdev->dev, "Memory allocation failed for sysfs attribute %d.\n",
-				i + 1);
-			return -ENOMEM;
-		}
-
-		PRIV_DEV_ATTR(i).dev_attr.attr.name = PRIV_ATTR(i)->name;
-		PRIV_DEV_ATTR(i).index = i;
-		sysfs_attr_init(&PRIV_DEV_ATTR(i).dev_attr.attr);
-	}
-#endif
 
 	pwm_mlxcpld->group.attrs = pwm_mlxcpld->pwm_mlxcpld_attr;
 	pwm_mlxcpld->groups[0] = &pwm_mlxcpld->group;
@@ -578,6 +541,28 @@ static int pwm_mlxcpld_probe(struct platform_device *pdev)
 		return err;
 	}
 
+	pwm_mlxcpld->fan_state = pwm_mlxcpld->fan_max_state;
+	if (IS_ENABLED(CONFIG_THERMAL)) {
+		cdev = thermal_cooling_device_register("pwm_mlxcpld",
+					pwm_mlxcpld, &pwm_mlxcpld_cooling_ops);
+		if (IS_ERR(cdev)) {
+			dev_err(&pdev->dev,
+				"Failed to register pwm_mlxcpld as cooling device");
+			pwm_disable(pwm_mlxcpld->pwm);
+			return PTR_ERR(cdev);
+		}
+
+		err = sysfs_create_link(&pdev->dev.kobj, &cdev->device.kobj,
+					"cooling_device");
+		if (err) {
+			thermal_cooling_device_unregister(cdev);
+			return err;
+		}
+
+		pwm_mlxcpld->cdev = cdev;
+		thermal_cdev_update(cdev);
+	}
+
 	pwm_mlxcpld->hwmon = devm_hwmon_device_register_with_groups(&pdev->dev,
 					"pwm_mlxcpld", pwm_mlxcpld,
 					pwm_mlxcpld->groups);
@@ -586,20 +571,6 @@ static int pwm_mlxcpld_probe(struct platform_device *pdev)
 			PTR_ERR(pwm_mlxcpld->hwmon));
 		pwm_disable(pwm_mlxcpld->pwm);
 		return PTR_ERR(pwm_mlxcpld->hwmon);
-	}
-
-	pwm_mlxcpld->fan_state = pwm_mlxcpld->fan_max_state;
-	if (IS_ENABLED(CONFIG_THERMAL)) {
-		cdev = thermal_of_cooling_device_register(pdev->dev.of_node,
-			"pwm-mlxcpld", pwm_mlxcpld, &pwm_mlxcpld_cooling_ops);
-		if (IS_ERR(cdev)) {
-			dev_err(&pdev->dev,
-				"Failed to register pwm-mlxcpld as cooling device");
-			pwm_disable(pwm_mlxcpld->pwm);
-			return PTR_ERR(cdev);
-		}
-		pwm_mlxcpld->cdev = cdev;
-		thermal_cdev_update(cdev);
 	}
 
 	return 0;
@@ -612,6 +583,10 @@ static int pwm_mlxcpld_remove(struct platform_device *pdev)
 	thermal_cooling_device_unregister(pwm_mlxcpld->cdev);
 	if (pwm_mlxcpld->pwm_value)
 		pwm_disable(pwm_mlxcpld->pwm);
+
+	sysfs_remove_link(&pdev->dev.kobj, "cooling_device");
+	thermal_cooling_device_unregister(pwm_mlxcpld->cdev);
+
 	return 0;
 }
 
