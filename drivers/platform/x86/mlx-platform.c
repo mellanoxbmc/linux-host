@@ -90,8 +90,7 @@ struct mlxplat_priv {
 	struct platform_device *pdev_mux[MLXPLAT_CPLD_LPC_MUX_DEVS];
 	struct platform_device *pdev_hotplug;
 	struct platform_device *pdev_np[MLXPLAT_CPLD_LPC_NP_DEVS];
-	struct platform_device *pdev_fan;
-	struct platform_device *pdev_serial;
+	struct platform_device *pdev_pwm;
 };
 
 /* Regions for LPC I2C controller and LPC base register space */
@@ -224,14 +223,16 @@ static struct resource mlxplat_mlxcpld_resources[] = {
 	[0] = DEFINE_RES_IRQ_NAMED(17, "mlxcpld-hotplug"),
 };
 
+struct mlxcpld_hotplug_platform_data *mlxplat_hotplug;
+
 static const struct platform_device_id mlxplat_mlxnp_idtable[] = {
         { .name = "tcam1_nl", .driver_data = 0 },
-        { .name = "tcam2_nl", .driver_data = 1 },
         { .name = "fpga1_nps400", .driver_data = 0 },
-        { .name = "fpga2_nps400", .driver_data = 1 },
         { .name = "gbox1", .driver_data = 0 },
         { .name = "gbox2", .driver_data = 1 },
 };
+
+static int mlxplat_mlxnp_idtable_size;
 
 struct pwm_mlxcpld_params mlxplat_mlxnp_tacho_param[] = {
 	{ 0, 25000, 600, 11, 0xe9, },
@@ -242,7 +243,6 @@ struct pwm_mlxcpld_params mlxplat_mlxnp_tacho_param[] = {
 	{ 0, 25000, 600, 11, 0xee, },
 	{ 0, 25000, 600, 11, 0xef, },
 	{ 0, 25000, 600, 11, 0xf0, },
-	{ 0, 25000, 600, 11, 0xf1, },
 };
 
 struct pwm_mlxcpld_params mlxplat_mlxnp_pwm_param[] = {
@@ -251,7 +251,7 @@ struct pwm_mlxcpld_params mlxplat_mlxnp_pwm_param[] = {
 
 unsigned int mlxplat_mlxnp_cooling_levels[] = {1, 2, 3, 4};
 
-static struct pwm_mlxcpld_platform_data mlxplat_mlxnp_fan = {
+static struct pwm_mlxcpld_platform_data mlxplat_mlxnp_pwm = {
 	.tacho = {
 		.count = ARRAY_SIZE(mlxplat_mlxnp_tacho_param),
 		.param = mlxplat_mlxnp_tacho_param,
@@ -264,20 +264,11 @@ static struct pwm_mlxcpld_platform_data mlxplat_mlxnp_fan = {
 	.fan_cooling_levels = mlxplat_mlxnp_cooling_levels,
 };
 
-struct mlxcpld_hotplug_platform_data *mlxplat_hotplug;
-
-#define MEMPORT(_base,_irq)                             \
-        {                                               \
-                .mapbase        = _base,                \
-                .irq            = _irq,                 \
-                .uartclk        = 1843200,              \
-                .iotype         = UPIO_MEM,             \
-                .flags          = UPF_BOOT_AUTOCONF|UPF_IOREMAP, \
-        }
+struct pwm_mlxcpld_platform_data *mlxplat_pwm;
 
 static struct plat_serial8250_port mlxplat_mlxnp_serial_data[] = {
 	{
-		.mapbase	= 0x03f8,
+		.iobase		= 0x02f8,
 		.irq		= 18,
 		.uartclk	= 1843200,
 		.iotype		= UPIO_PORT,
@@ -293,6 +284,8 @@ static struct platform_device mlxplat_mlxnp_serial8250_device = {
                 .platform_data  = mlxplat_mlxnp_serial_data,
         },
 };
+
+static struct platform_device *mlxplat_serial;
 
 static int __init mlxplat_dmi_default_matched(const struct dmi_system_id *dmi)
 {
@@ -318,6 +311,23 @@ static int __init mlxplat_dmi_msn21xx_matched(const struct dmi_system_id *dmi)
 				ARRAY_SIZE(mlxplat_msn21xx_channels);
 	}
 	mlxplat_hotplug = &mlxplat_mlxcpld_msn21xx_data;
+
+	return 1;
+};
+
+static int __init mlxplat_dmi_msnpxx_matched(const struct dmi_system_id *dmi)
+{
+	int i;
+
+	for (i = 0; i < ARRAY_SIZE(mlxplat_mux_data); i++) {
+		mlxplat_mux_data[i].values = mlxplat_default_channels[i];
+		mlxplat_mux_data[i].n_values =
+				ARRAY_SIZE(mlxplat_default_channels[i]);
+	}
+	mlxplat_hotplug = &mlxplat_mlxcpld_default_data;
+	mlxplat_mlxnp_idtable_size = ARRAY_SIZE(mlxplat_mlxnp_idtable);
+	mlxplat_pwm = &mlxplat_mlxnp_pwm;
+	mlxplat_serial = &mlxplat_mlxnp_serial8250_device;
 
 	return 1;
 };
@@ -358,6 +368,13 @@ static struct dmi_system_id mlxplat_dmi_table[] __initdata = {
 			DMI_MATCH(DMI_PRODUCT_NAME, "MSN21"),
 		},
 	},
+	{
+		.callback = mlxplat_dmi_msnpxx_matched,
+		.matches = {
+			DMI_MATCH(DMI_BOARD_VENDOR, "Mellanox Technologies"),
+			/* DMI_MATCH(DMI_PRODUCT_NAME, "MSNP"), */
+		},
+	},
 	{ }
 };
 
@@ -391,35 +408,6 @@ static int __init mlxplat_init(void)
 		goto fail_alloc;
 	}
 
-	for (i = 0; i < ARRAY_SIZE(mlxplat_mlxnp_idtable); i++) {
-		priv->pdev_np[i] = platform_device_register_simple(
-				mlxplat_mlxnp_idtable[i].name,
-				mlxplat_mlxnp_idtable[i].driver_data, NULL, 0);
-
-		if (IS_ERR(priv->pdev_np[i])) {
-			err = PTR_ERR(priv->pdev_np[i]);
-			goto fail_alloc_np;
-		}
-	}
-
-	priv->pdev_fan = platform_device_register_resndata(
-						&mlxplat_dev->dev,
-						"pwm-mlxcpld",
-						PLATFORM_DEVID_NONE, NULL,
-						0, &mlxplat_mlxnp_fan,
-						sizeof(mlxplat_mlxnp_fan));
-	if (IS_ERR(priv->pdev_fan)) {
-		err = PTR_ERR(priv->pdev_fan);
-		goto fail_platform_mux_register;///
-	}
-
-	/*priv->pdev_serial =*/ platform_device_register(
-					&mlxplat_mlxnp_serial8250_device);
-	/*if (IS_ERR(priv->pdev_serial)) {
-		err = PTR_ERR(priv->pdev_fan);
-		goto fail_platform_mux_register;///
-	}*/
-
 	for (i = 0; i < ARRAY_SIZE(mlxplat_mux_data); i++) {
 		priv->pdev_mux[i] = platform_device_register_resndata(
 						&mlxplat_dev->dev,
@@ -443,14 +431,49 @@ static int __init mlxplat_init(void)
 		goto fail_platform_mux_register;
 	}
 
+	for (i = 0; i < mlxplat_mlxnp_idtable_size; i++) {
+		priv->pdev_np[i] = platform_device_register_simple(
+				mlxplat_mlxnp_idtable[i].name,
+				mlxplat_mlxnp_idtable[i].driver_data, NULL, 0);
+
+		if (IS_ERR(priv->pdev_np[i])) {
+			err = PTR_ERR(priv->pdev_np[i]);
+			goto fail_alloc_np;
+		}
+	}
+
+	if (!mlxplat_pwm)
+		return 0;
+
+	priv->pdev_pwm = platform_device_register_resndata(
+						&mlxplat_dev->dev,
+						"pwm-mlxcpld",
+						PLATFORM_DEVID_NONE, NULL,
+						0, mlxplat_pwm,
+						sizeof(*mlxplat_pwm));
+	if (IS_ERR(priv->pdev_pwm)) {
+		err = PTR_ERR(priv->pdev_pwm);
+		goto fail_alloc_np;
+	}
+
+	if (!mlxplat_serial)
+		return 0;
+
+	err = platform_device_register(mlxplat_serial);
+	if (err)
+		goto fail_alloc_serial;
+
 	return 0;
 
-fail_platform_mux_register:
-	for (i--; i > 0 ; i--)
-		platform_device_unregister(priv->pdev_mux[i]);
+fail_alloc_serial:
+	if (mlxplat_pwm)
+		platform_device_unregister(priv->pdev_pwm);
 fail_alloc_np:
 	while (priv->pdev_np[i] && !IS_ERR(priv->pdev_np[i++]))
 		platform_device_unregister(priv->pdev_np[i]);
+fail_platform_mux_register:
+	while (priv->pdev_mux[i] && !IS_ERR(priv->pdev_mux[i++]))
+		platform_device_unregister(priv->pdev_mux[i]);
 	platform_device_unregister(priv->pdev_i2c);
 fail_alloc:
 	platform_device_unregister(mlxplat_dev);
@@ -464,19 +487,19 @@ static void __exit mlxplat_exit(void)
 	struct mlxplat_priv *priv = platform_get_drvdata(mlxplat_dev);
 	int i;
 
-	platform_device_unregister(priv->pdev_hotplug);
+	if (mlxplat_serial)
+		platform_device_unregister(mlxplat_serial);
 
-	/*platform_device_unregister(priv->pdev_serial);*/
-	platform_device_unregister(priv->pdev_fan);
+	if (mlxplat_pwm)
+		platform_device_unregister(priv->pdev_pwm);
 
-	for (i = 0; i < ARRAY_SIZE(mlxplat_mlxnp_idtable); i++)
+	for (i = 0; i < mlxplat_mlxnp_idtable_size; i++)
 		platform_device_unregister(priv->pdev_np[i]);
+
+	platform_device_unregister(priv->pdev_hotplug);
 
 	for (i = ARRAY_SIZE(mlxplat_mux_data) - 1; i >= 0 ; i--)
 		platform_device_unregister(priv->pdev_mux[i]);
-
-	for (i = 0; i < ARRAY_SIZE(mlxplat_mlxnp_idtable); i++)
-		platform_device_unregister(priv->pdev_np[i]);
 
 	platform_device_unregister(priv->pdev_i2c);
 	platform_device_unregister(mlxplat_dev);
