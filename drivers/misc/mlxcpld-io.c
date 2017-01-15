@@ -42,7 +42,7 @@
 /* LPC IFC in PCH defines */
 #define MLXCPLD_IO_CPLD_LPC_I2C_BASE_ADRR	0x2000
 #define MLXCPLD_IO_CPLD_LPC_REG_BASE_ADRR	0x2500
-#define MLX_IO_LPC_BMC_BASE_ADRR		0x2700
+#define MLX_IO_LPC_BMC_BASE_ADRR		0xe4
 #define MLXCPLD_IO_CPLD_LPC_CTRL_IFC_BUS_ID	0
 #define MLXCPLD_IO_CPLD_LPC_CTRL_IFC_SLOT_ID	31
 #define MLXCPLD_IO_CPLD_LPC_CTRL_IFC_FUNC_ID	0
@@ -61,10 +61,10 @@
 #define MLXCPLD_IO_CPLD_LPC_PCH_GEN_DEC_BASE	0x84
 #define MLXCPLD_IO_CPLD_LPC_RNG_CTRL		0x84
 #define MLXCPLD_IO_CPLD_LPC_PCH_GEN_DEC_RANGES	4
-#define MLX_IO_LPC_BMC_RANGE			3
+#define MLX_IO_LPC_BMC_RANGE					3
 #define MLXCPLD_IO_CPLD_LPC_I2C_RANGE		2
-#define MLXCPLD_IO_CPLD_LPC_RANGE		3
-#define MLXCPLD_IO_CPLD_LPC_CLKS_EN		0
+#define MLXCPLD_IO_CPLD_LPC_RANGE			3
+#define MLXCPLD_IO_CPLD_LPC_CLKS_EN			0
 #define MLXCPLD_IO_CPLD_LPC_IO_RANGE		0x100
 
 /* struct mlxcpld_io - private data:
@@ -86,9 +86,6 @@ static struct resource mlxcpld_io_lpc_resources[] = {
 	[1] = DEFINE_RES_NAMED(MLXCPLD_IO_CPLD_LPC_REG_BASE_ADRR,
 			       MLXCPLD_IO_CPLD_LPC_IO_RANGE,
 			       "mlxcpld_io_cpld_lpc_regs", IORESOURCE_IO),
-	[2] = DEFINE_RES_NAMED(MLX_IO_LPC_BMC_BASE_ADRR,
-			       MLXCPLD_IO_CPLD_LPC_IO_RANGE,
-			       "mlxcpld_io_lpc_bmc", IORESOURCE_IO),
 };
 
 static struct platform_device *mlxcpld_io_plat;
