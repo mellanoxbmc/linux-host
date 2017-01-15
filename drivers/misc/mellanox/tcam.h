@@ -44,37 +44,11 @@
 #include "fpga.h"
 #include "mlxnp_ioctl.h"
 
-#define MLXNP_TCAM_NUM_OF_LANES			16
-
 /* TCAM CPLD registers */
-#define MLXNP_TCAM_CPLD_RESET			0x2
-#define MLXNP_TCAM_CPLD_SRST_DEASSERT		0x1
-#define MLXNP_TCAM_CPLD_CRST_DEASSERT		0x2
+#define MLXNP_TCAM_CPLD_RESET		0x2
+#define MLXNP_TCAM_CPLD_SRST_DEASSERT	0x1
+#define MLXNP_TCAM_CPLD_CRST_DEASSERT	0x2
 
-/* TCAM device registers */
-/* Device 1 */
-#define MLXNP_TCAM_MDIO_DEVICE_1		0x1
-#define MLXNP_TCAM_GLOBAL_DEV_CONFIG_16_31	0xE
-#if 0
-/* Device 4 - TCAM Host Port 0 */
-#define MLXNP_TCAM_MDIO_DEVICE_4		0x4
-#define MLXNP_TCAM_TX_LANE_ENABLE		0x10
-#define MLXNP_TCAM_RX_LANE_ENABLE		0x12
-#define MLXNP_TCAM_LINK_CNTRL_LOW		0x0
-#define MLXNP_TCAM_LINK_CNTRL_HIGH		0x1
-
-/* Device 8 - Common host device */
-#define MLXNP_TCAM_MDIO_DEVICE_8		0x8
-#define MLXNP_TCAM_TRANSMIT_SEL_REF_0_15	0x0
-#define MLXNP_TCAM_TRANSMIT_SEL_REF_16_31	0x1
-#define MLXNP_TCAM_ILKN_LA_CNTRL_0_15		0x214
-#define MLXNP_TCAM_ILKN_LA_CNTRL_16_31		0x215
-#define MLXNP_TCAM_RECV_BUFF_FC_0_15		0x218
-#define MLXNP_TCAM_RECV_BUFF_FC_16_31		0x219
-
-/* Device 9 - Common cascade device */
-#define MLXNP_TCAM_MDIO_DEVICE_9		0x9
-#endif
 enum mlxnp_tcam_type {
 	tcam1_nl,
 	tcam2_nl,

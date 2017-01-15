@@ -34,7 +34,7 @@
 #include <linux/delay.h>
 #include "fpga.h"
 
-/* MDC/MDIO */
+/* MDC/MDIO TCAM */
 #define MLXNP_FPGA_TCAM_WAIT_RETRIES	25
 #define MLXNP_FPGA_TCAM_WAIT_INTERVAL	200
 #define MLXNP_FPGA_TCAM_PORT_ADDRESS	0x10

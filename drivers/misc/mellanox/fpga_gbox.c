@@ -34,20 +34,15 @@
 #include <linux/delay.h>
 #include "fpga.h"
 
-/* MDC/MDIO */
-#define GBOX_WAIT_RETRIES	25
-#define GBOX_WAIT_INTERVAL	200
-#define GBOX_PORT_ADDRESS	0x10
+/* MDC/MDIO GBOX */
+#define MLNXP_GBOX_WAIT_RETRIES		25
+#define MLNXP_GBOX_WAIT_INTERVAL	200
+#define MLNXP_GBOX_PORT_ADDRESS		0x10
 
 /* FPGA GBOX registers */
-#define MLXNP_FPGA_FPGA_GBOX_PORT_ADDR		0x50
-#define MLXNP_FPGA_FPGA_GBOX_DEVICE_ADDR	0x51
-#define MLXNP_FPGA_FPGA_GBOX_ADDRESS_LSB	0x52
-#define MLXNP_FPGA_FPGA_GBOX_ADDRESS_MSB	0x53
-#define MLXNP_FPGA_FPGA_GBOX_DATA_LSB		0x54
-#define MLXNP_FPGA_FPGA_GBOX_DATA_MSB		0x55
-#define MLXNP_FPGA_FPGA_GBOX_CONTROL		0x56
-#define MLXNP_FPGA_FPGA_GBOX_STATUS		0x57
+#define MLXNP_FPGA_FPGA_GBOX_PORT_ADDR	0x50
+#define MLXNP_FPGA_FPGA_GBOX_DATA_LSB	0x54
+#define MLXNP_FPGA_FPGA_GBOX_STATUS	0x57
 
 struct mlxnp_fpga_gbox_registers {
 	union {
@@ -100,7 +95,7 @@ mlxnp_fpga_wait_gbox_status(struct mlxnp_fpga_data *data,
 			    struct mlxnp_fpga_gbox_registers *gbox_regs,
 			    int wait_for_ready, int wait_for_valid)
 {
-	int retries = GBOX_WAIT_RETRIES;
+	int retries = MLNXP_GBOX_WAIT_RETRIES;
 	int err;
 
 	/* wait for gbox mdc/mdio status */
@@ -112,7 +107,8 @@ mlxnp_fpga_wait_gbox_status(struct mlxnp_fpga_data *data,
 		if ((!wait_for_ready || gbox_regs->ready) &&
 				(!wait_for_valid || gbox_regs->valid))
 			break;
-		usleep_range(GBOX_WAIT_INTERVAL,GBOX_WAIT_INTERVAL*2);
+		usleep_range(MLNXP_GBOX_WAIT_INTERVAL,
+			     MLNXP_GBOX_WAIT_INTERVAL * 2);
 	}
 
 	if (wait_for_ready) {
@@ -170,7 +166,7 @@ _mlxnp_fpga_get_gbox_reg(struct mlxnp_fpga_data *data, unsigned int dev,
 		goto cleanup;
 
 	/* update GBOX registers with transaction details */
-	gbox_regs.port = GBOX_PORT_ADDRESS;
+	gbox_regs.port = MLNXP_GBOX_PORT_ADDRESS;
 	gbox_regs.device = dev;
 	gbox_regs.address = addr;
 
@@ -222,7 +218,7 @@ _mlxnp_fpga_set_gbox_reg(struct mlxnp_fpga_data *data, unsigned int dev,
 		goto cleanup;
 
 	/* update GBOX registers with transaction details */
-	gbox_regs.port = GBOX_PORT_ADDRESS;
+	gbox_regs.port = MLNXP_GBOX_PORT_ADDRESS;
 	gbox_regs.device = dev;
 	gbox_regs.address = addr;
 	gbox_regs.data = value;

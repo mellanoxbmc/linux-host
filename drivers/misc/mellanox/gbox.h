@@ -44,24 +44,17 @@
 #include "fpga.h"
 #include "mlxnp_ioctl.h"
 
-#define MLXNP_GBOX_NUM_OF_LANES			16
-
-/* TCAM CPLD registers */
-#define MLXNP_GBOX_CPLD_RESET			0x2
-#define MLXNP_GBOX_CPLD_SRST_DEASSERT		0x1
-#define MLXNP_GBOX_CPLD_CRST_DEASSERT		0x2
-
-/* TCAM device registers */
-/* Device 1 */
-#define MLXNP_GBOX_MDIO_DEVICE_1		0x1
-#define MLXNP_GBOX_GLOBAL_DEV_CONFIG_16_31	0xE
+/* GEARBOX CPLD registers */
+#define MLXNP_GBOX_CPLD_RESET		0x2
+#define MLXNP_GBOX_CPLD_SRST_DEASSERT	0x1
+#define MLXNP_GBOX_CPLD_CRST_DEASSERT	0x2
 
 enum mlxnp_gbox_type {
 	gbox1_nl,
 	gbox2_nl,
 };
 
-/* TCAM private data */
+/* GEARBOX private data */
 struct mlxnp_gbox_data {
 	const char *kind;
 	const char *name;

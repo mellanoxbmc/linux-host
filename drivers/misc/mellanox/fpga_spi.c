@@ -36,6 +36,7 @@
 #include <linux/mtd/partitions.h>
 #include "fpga.h"
 
+/* FPGA SPI */
 #define MLXNP_FPGA_SPI_CS_DEACTIVATE	1
 #define MLXNP_FPGA_SPI_CS_ACTIVATE	0
 #define MLXNP_FPGA_SPI_MAX_SPEED_HZ	(15 * 1000 * 1000)

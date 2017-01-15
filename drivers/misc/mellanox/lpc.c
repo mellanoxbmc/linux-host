@@ -34,7 +34,7 @@
 #include <linux/io.h>
 #include "lpc.h"
 
-#define MLXPNP_LPC_REG_BASE_ADRR     0x2500 /* LPC bus access */
+#define MLXPNP_LPC_REG_BASE_ADRR     0x2000 /* LPC bus access */
 
 static void mlxnp_lpc_write_buf(const u8 *data, u8 len, u32 addr)
 {

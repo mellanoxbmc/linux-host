@@ -34,6 +34,7 @@
 #include <linux/delay.h>
 #include "fpga.h"
 
+/* FPGA cluster */
 #define MLXNP_FPGA_CLUSTER_REG_ADDR_MASK		0xFF000000
 #define MLXNP_FPGA_CLUSTER_REG_MASK			0xF6000000
 #define MLXNP_FPGA_IS_CLUSTER_REGISTER(address) ((address & \

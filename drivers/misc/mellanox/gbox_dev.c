@@ -40,7 +40,7 @@
  * Char device
  */
 
-#define GBOX_RESET_DELAY       10
+#define MLNXP_GBOX_RESET_DELAY       10
 
 struct mlxnp_fpga_data_avail mlxnp_fpga_avail = {NULL, NULL};
 
@@ -183,7 +183,7 @@ mlxnp_gbox_set_reset(struct mlxnp_gbox_data *data, int s_reset, int c_reset)
 	if (res)
 		return res;
 
-	usleep_range(GBOX_RESET_DELAY, GBOX_RESET_DELAY * 2);
+	usleep_range(MLNXP_GBOX_RESET_DELAY, MLNXP_GBOX_RESET_DELAY * 2);
 
 	return res;
 }

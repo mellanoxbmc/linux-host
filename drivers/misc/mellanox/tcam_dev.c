@@ -40,9 +40,7 @@
  * Char device
  */
 
-#define TCAM_RESET_DELAY	10
-#define TCAM_SOFT_RESET_SIZE	8
-#define TCAM_SOFT_RESET_DELAY	30
+#define MLXNP_TCAM_RESET_DELAY	10
 
 struct mlxnp_tcam_serdes_reg {
 	u16 addr;
@@ -190,7 +188,7 @@ mlxnp_tcam_set_reset(struct mlxnp_tcam_data *data, int s_reset, int c_reset)
 	if (res)
 		return res;
 
-	usleep_range(TCAM_RESET_DELAY, TCAM_RESET_DELAY * 2);
+	usleep_range(MLXNP_TCAM_RESET_DELAY, MLXNP_TCAM_RESET_DELAY * 2);
 
 	return res;
 }
