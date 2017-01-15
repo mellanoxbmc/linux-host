@@ -61,6 +61,7 @@ lkdtm-$(CONFIG_LKDTM)		+= lkdtm_perms.o
 lkdtm-$(CONFIG_LKDTM)		+= lkdtm_rodata_objcopy.o
 lkdtm-$(CONFIG_LKDTM)		+= lkdtm_usercopy.o
 
+obj-$(CONFIG_MLXCPLD_CTRL)	+= mlxcpld-ctrl.o
 obj-$(CONFIG_MLXCPLD_IO)	+= mlxcpld-io.o
 obj-y				+= mellanox/
 

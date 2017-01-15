@@ -164,6 +164,7 @@ meas	Measurement Specialties
 mediatek	MediaTek Inc.
 melexis	Melexis N.V.
 melfas	MELFAS Inc.
+mellanox	Mellanox Technologies
 merrii	Merrii Technology Co., Ltd.
 micrel	Micrel Inc.
 microchip	Microchip Technology Inc.
